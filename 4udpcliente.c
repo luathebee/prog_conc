@@ -1,5 +1,6 @@
 /*  Programa de demonstração de uso de sockets UDP em C no Linux
  *  Funcionamento:
+ * T1
  *  O programa cliente envia uma msg para o servidor. Essa msg é uma palavra.
  *  O servidor envia outra palavra como resposta.
  *  Estado Atual: Com controle de nível, com funcionamento periódico em CLOCK_MONOTONIC;
@@ -41,7 +42,7 @@ int cria_socket_local(void)
 	socket_local = socket( PF_INET, SOCK_DGRAM, 0);
 	if (socket_local < 0) {
 		perror("socket");
-		return;
+		return 0;
 	}
 	return socket_local;
 }
@@ -82,7 +83,7 @@ void envia_mensagem(int socket_local, struct sockaddr_in endereco_destino, char 
 	/* Envia msg ao servidor */
 
 	if (sendto(socket_local, mensagem, strlen(mensagem)+1, 0, (struct sockaddr *) &endereco_destino, sizeof(endereco_destino)) < 0 )
-	{ 
+	{
 		perror("sendto");
 		return;
 	}
@@ -107,11 +108,11 @@ int recebe_mensagem(int socket_local, char *buffer, int TAM_BUFFER)
  * 2- UTILIZAR GLOBAR DIRETAMENTE NA MAIN*/
 
 /*float getValor(char msg[]){
-	
+
 	int i, porta_destino = 12345;
-	
+
 	char msg_recebida[1000];
-	
+
 	envia_mensagem(socket_local, endereco_destino, msg);
 	int nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
 	for(i = 0; i <= 4; i++){
@@ -127,12 +128,12 @@ int recebe_mensagem(int socket_local, char *buffer, int TAM_BUFFER)
 
 /* MANDA VALOR, QUEBRADASSO, OCORRENCIA DE SEGFAULT
  * void mandaValor(char tipo[], float valor){
-	
+
 	int porta_destino = 12345;
 	struct sockaddr_in endereco_destino = cria_endereco_destino("localhost", 12345);
 	int socket_local = cria_socket_local();
 	char strValor[20], strMsg[20];
-	
+
 	printf("%f\n",valor);
 	sprintf(*strValor, "%f",valor);
 	strValor[5] = '\0';
@@ -142,7 +143,7 @@ int recebe_mensagem(int socket_local, char *buffer, int TAM_BUFFER)
 	printf(strMsg);
 	printf("  <-Mensagem enviada\n");
 	envia_mensagem(socket_local, endereco_destino, strMsg);
-	
+
 }
 */
 
@@ -150,10 +151,10 @@ int recebe_mensagem(int socket_local, char *buffer, int TAM_BUFFER)
 //--------------------------------------------------------------------------
 //--------------------------------------MAIN--------------------------------
 //--------------------------------------------------------------------------
-	
+
 int main(int argc, char *argv[])
 {
-	if (argc < 4) { 
+	if (argc < 4) {
 		fprintf(stderr,"Uso: udpcliente endereço porta palavra \n");
 		fprintf(stderr,"onde o endereço é o endereço do servidor \n");
 		fprintf(stderr,"porta é o número da porta do servidor \n");
@@ -162,12 +163,12 @@ int main(int argc, char *argv[])
 		fprintf(stderr,"   udpcliente baker.das.ufsc.br 1234 \"ola\"\n");
 		exit(FALHA);
 	}
-	
+
 	///* segmento periódico */
 	 	//struct timespec t, tfin;
 	 	//int interval = 500000000; /* (1/2)s */
-	 	////500000000 =  (1/2)s 
-     
+	 	////500000000 =  (1/2)s
+
 		//clock_gettime(CLOCK_MONOTONIC ,&t);
 		///* start after one second */
 		//t.tv_sec++;
@@ -181,20 +182,20 @@ int main(int argc, char *argv[])
 	struct sockaddr_in endereco_destino = cria_endereco_destino(argv[1], porta_destino);
 
 	FILE *dados;
-	int temporizador, i = 0, iteract = 0;     
+	int temporizador, i = 0, iteract = 0;
 	char msg_recebida[1000], strValor[20], strMsg[20];
 	int nrec;
 	float H, Ni, No, Uh;
-	
+
 	float Href = atof (argv[3]);
 	printf("	Referencia de altura = %.1f\n",Href);
-	
+
 	/*EXEMPLO DE COMUNICACAO
 	envia_mensagem(socket_local, endereco_destino, argv[3]);
 	nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
 	msg_recebida[ nrec ] = '\0';
 	printf("Mensagem de resposta com %d bytes >>>%s\n", nrec, msg_recebida);
-	* 
+	*
 	* 	H = getValor("sh-0");
 		printf("	Altura do reservatorio em %.1f\n",H);
 		No = getValor("sno0");
@@ -206,7 +207,7 @@ int main(int argc, char *argv[])
         ///* do the stuff */
 
 	// MALHA DE CONTROLE ALTURA
-	
+
 	//No = getValor("sno0");
 		envia_mensagem(socket_local, endereco_destino, "sno0");
 		nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
@@ -225,15 +226,15 @@ int main(int argc, char *argv[])
 	dados = fopen("arquivodados.txt", "w");
 	fprintf(dados, " 200 Medidas de altura H\n");
 
-			
+
 	while(1){
 		//clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &t, NULL);
-		
+
 		iteract++;
 		printf("Iteração: %d\n",iteract);
 
 		/* do the stuff */
-		
+
 		//H = getValor("sh-0");
 			envia_mensagem(socket_local, endereco_destino, "sh-0");
 			nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
@@ -244,20 +245,20 @@ int main(int argc, char *argv[])
 			//printf(msg_recebida);
 			//printf("\n");
 			H = atof(msg_recebida);
-			
+
 			fprintf(dados, " %f\n",H);
 			if (iteract == 20){ fclose(dados); }
-			
-									
-			
+
+
+
 		Uh = ke * KpH * (Href - H);
 		printf("Controle = %f \n",Uh);
 		Ni = Ni*offset + Uh;
 		if (Ni < 0){ Ni = 0;}
 		if (Ni > 100){ Ni = 100;}
 		//Ni = Ni*offset + Uh;
-		
-		//mandaValor	
+
+		//mandaValor
 		sprintf(strValor, "%f",Ni);
 		strValor[5] = '\0';
 		strcpy(strMsg, "ani");
@@ -267,14 +268,14 @@ int main(int argc, char *argv[])
 		nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
 		msg_recebida[ nrec ] = '\0';
 		printf("Mensagem de resposta com %d bytes >>>%s\n", nrec, msg_recebida);
-		
-		
+
+
 		//clock_gettime(CLOCK_MONOTONIC ,&tfin);
 		//float varT = tfin.tv_nsec - t.tv_nsec;
 		//printf(" Tempo = %.0f\n",varT);
 
 
-			
+
 		/*temporizador simples*/
 		temporizador = 0;
 		while(temporizador<500000000){ temporizador++; }
@@ -282,14 +283,14 @@ int main(int argc, char *argv[])
 		///* calculate next shot */
 		//clock_gettime(CLOCK_MONOTONIC ,&t);
         //t.tv_nsec += interval;
-	
+
         //while (t.tv_nsec >= NSEC_PER_SEC) {
                 //t.tv_nsec -= NSEC_PER_SEC;
                 //t.tv_sec++;
         //}
-				
+
 	}
-	
+
 	fclose(dados);
-	
+
 }
