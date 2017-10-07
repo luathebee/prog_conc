@@ -231,7 +231,6 @@ int main(int argc, char *argv[])
 		//clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &t, NULL);
 
 		iteract++;
-		printf("Iteração: %d\n",iteract);
 
 		/* do the stuff */
 
@@ -247,12 +246,11 @@ int main(int argc, char *argv[])
 			H = atof(msg_recebida);
 
 			fprintf(dados, " %f\n",H);
-			if (iteract == 20){ fclose(dados); }
+			if (iteract == 100000){ fclose(dados); }
 
 
 
 		Uh = ke * KpH * (Href - H);
-		printf("Controle = %f \n",Uh);
 		Ni = Ni*offset + Uh;
 		if (Ni < 0){ Ni = 0;}
 		if (Ni > 100){ Ni = 100;}
@@ -263,34 +261,37 @@ int main(int argc, char *argv[])
 		strValor[5] = '\0';
 		strcpy(strMsg, "ani");
 		strcat(strMsg, strValor);
-		printf("%s  <-Mensagem enviada\n", strMsg);
 		envia_mensagem(socket_local, endereco_destino, strMsg);
 		nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
 		msg_recebida[ nrec ] = '\0';
-		printf("Mensagem de resposta com %d bytes >>>%s\n", nrec, msg_recebida);
 
-
+		/*Aquisição de tempo
 		//clock_gettime(CLOCK_MONOTONIC ,&tfin);
 		//float varT = tfin.tv_nsec - t.tv_nsec;
-		//printf(" Tempo = %.0f\n",varT);
+		//printf(" Tempo = %.0f\n",varT); */
 
-
-
+	 /*printer*/
+	 if (iteract%100 == 0){
+			 printf("Iteração: %d\n",iteract);
+		   printf("Controle = %f \n",Uh);
+			 printf("%s  <-Mensagem enviada\n", strMsg);
+			 printf("Mensagem de resposta com %d bytes >>>%s\n", nrec, msg_recebida);
+	 }
 		/*temporizador simples*/
 		temporizador = 0;
-		while(temporizador<500000000){ temporizador++; }
+		while(temporizador<5000000){ temporizador++; }
+
+
 
 		///* calculate next shot */
 		//clock_gettime(CLOCK_MONOTONIC ,&t);
         //t.tv_nsec += interval;
-
         //while (t.tv_nsec >= NSEC_PER_SEC) {
                 //t.tv_nsec -= NSEC_PER_SEC;
                 //t.tv_sec++;
         //}
 
 	}
-
 	fclose(dados);
 
 }
