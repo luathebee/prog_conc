@@ -48,9 +48,6 @@ int cria_socket_local(void)
 }
 
 
-
-
-
 struct sockaddr_in cria_endereco_destino(char *destino, int porta_destino)
 {
 	struct sockaddr_in servidor; 	/* Endereço do servidor incluindo ip e porta */
@@ -74,8 +71,6 @@ struct sockaddr_in cria_endereco_destino(char *destino, int porta_destino)
 
 	return servidor;
 }
-
-
 
 
 void envia_mensagem(int socket_local, struct sockaddr_in endereco_destino, char *mensagem)
@@ -103,6 +98,9 @@ int recebe_mensagem(int socket_local, char *buffer, int TAM_BUFFER)
 
 	return bytes_recebidos;
 }
+
+
+
 /* EVITAR CRIACAO DESNECESSARIA DE SOCKET
  * 1- PASSAR SOCKET COMO PARAMETRO
  * 2- UTILIZAR GLOBAR DIRETAMENTE NA MAIN*/
@@ -191,7 +189,7 @@ int main(int argc, char *argv[])
 	printf("	Referencia de altura = %.1f\n",Href);
 
 	/*EXEMPLO DE COMUNICACAO
-	envia_mensagem(socket_local, endereco_destino, argv[3]);
+		envia_mensagem(socket_local, endereco_destino, argv[3]);
 	nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
 	msg_recebida[ nrec ] = '\0';
 	printf("Mensagem de resposta com %d bytes >>>%s\n", nrec, msg_recebida);
@@ -204,9 +202,7 @@ int main(int argc, char *argv[])
 		printf("	Temperatura ambiente em %.1f\n\n",H);
 	*/
 
-        ///* do the stuff */
-
-	// MALHA DE CONTROLE ALTURA
+	// MALHA DE CONTROLE de ALTURA
 
 	//No = getValor("sno0");
 		envia_mensagem(socket_local, endereco_destino, "sno0");
@@ -245,9 +241,10 @@ int main(int argc, char *argv[])
 			//printf("\n");
 			H = atof(msg_recebida);
 
+			/*ESCRITA DE DADOS EM ARQUIVO
 			fprintf(dados, " %f\n",H);
 			if (iteract == 100000){ fclose(dados); }
-
+			*/
 
 
 		Uh = ke * KpH * (Href - H);
