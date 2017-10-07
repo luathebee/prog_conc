@@ -100,12 +100,8 @@ int recebe_mensagem(int socket_local, char *buffer, int TAM_BUFFER)
 }
 
 
-
-/* EVITAR CRIACAO DESNECESSARIA DE SOCKET
- * 1- PASSAR SOCKET COMO PARAMETRO
- * 2- UTILIZAR GLOBAR DIRETAMENTE NA MAIN*/
-
-/*float getValor(char msg[]){
+/*FUNÇÃO GETVALOR*/
+float getValor(char msg[], int socket_local, struct sockaddr_in endereco_destino){
 
 	int i, porta_destino = 12345;
 
@@ -122,7 +118,7 @@ int recebe_mensagem(int socket_local, char *buffer, int TAM_BUFFER)
 	return atof(msg_recebida);
 
 }
-*/
+
 
 /* MANDA VALOR, QUEBRADASSO, OCORRENCIA DE SEGFAULT
  * void mandaValor(char tipo[], float valor){
@@ -167,7 +163,7 @@ int main(int argc, char *argv[])
 	 	//int interval = 500000000; /* (1/2)s */
 	 	////500000000 =  (1/2)s
 
-		//clock_gettime(CLOCK_MONOTONIC ,&t);
+	//clock_gettime(CLOCK_MONOTONIC ,&t);
 		///* start after one second */
 		//t.tv_sec++;
 
@@ -204,8 +200,8 @@ int main(int argc, char *argv[])
 
 	// MALHA DE CONTROLE de ALTURA
 
-	//No = getValor("sno0");
-		envia_mensagem(socket_local, endereco_destino, "sno0");
+	No = getValor("sno0", socket_local, endereco_destino);
+		/*envia_mensagem(socket_local, endereco_destino, "sno0");
 		nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
 		for(i = 0; i <= 4; i++){
 			msg_recebida[i] = msg_recebida[i+3];
@@ -213,7 +209,7 @@ int main(int argc, char *argv[])
 		msg_recebida[5] = '\0';
 		//printf(msg_recebida);
 		//printf("\n");
-		No = atof(msg_recebida);
+		No = atof(msg_recebida);*/
 
 	printf("	Fluxo de saída de agua em %.1f\n",No);
 	//valor inicial de Ni = No;
@@ -230,8 +226,8 @@ int main(int argc, char *argv[])
 
 		/* do the stuff */
 
-		//H = getValor("sh-0");
-			envia_mensagem(socket_local, endereco_destino, "sh-0");
+		H = getValor("sh-0", socket_local, endereco_destino);
+			/*envia_mensagem(socket_local, endereco_destino, "sh-0");
 			nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
 			for(i = 0; i <= 4; i++){
 				msg_recebida[i] = msg_recebida[i+3];
@@ -239,7 +235,7 @@ int main(int argc, char *argv[])
 			msg_recebida[5] = '\0';
 			//printf(msg_recebida);
 			//printf("\n");
-			H = atof(msg_recebida);
+			H = atof(msg_recebida);*/
 
 			/*ESCRITA DE DADOS EM ARQUIVO
 			fprintf(dados, " %f\n",H);
