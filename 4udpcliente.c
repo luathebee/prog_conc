@@ -103,43 +103,42 @@ int recebe_mensagem(int socket_local, char *buffer, int TAM_BUFFER)
 /*FUNÇÃO GETVALOR*/
 float getValor(char msg[], int socket_local, struct sockaddr_in endereco_destino){
 
-	int i, porta_destino = 12345;
+			int i, porta_destino = 12345;
 
-	char msg_recebida[1000];
+			char msg_recebida[1000];
 
-	envia_mensagem(socket_local, endereco_destino, msg);
-	int nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
-	for(i = 0; i <= 4; i++){
-		msg_recebida[i] = msg_recebida[i+3];
-	}
-	msg_recebida[5] = '\0';
-	//printf(msg_recebida);
-	//printf("\n");
-	return atof(msg_recebida);
+			envia_mensagem(socket_local, endereco_destino, msg);
+			int nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
+			for(i = 0; i <= 4; i++){
+				msg_recebida[i] = msg_recebida[i+3];
+			}
+			msg_recebida[5] = '\0';
+			//printf(msg_recebida);
+			//printf("\n");
+			return atof(msg_recebida);
+
+}
+
+
+/* MANDA VALOR, QUEBRADASSO, OCORRENCIA DE SEGFAULT*/
+char mandaValor(char tipo[], float valor, int socket_local, struct sockaddr_in endereco_destino){
+
+			int porta_destino = 12345;
+			char strValor[20], strMsg[20], msg_recebida[50];
+
+			sprintf(strValor, "%f",valor);
+			strValor[5] = '\0';
+			strcpy(strMsg, tipo);
+			strcat(strMsg, strValor);
+			//printf("  <-Mensagem enviada\n");
+			envia_mensagem(socket_local, endereco_destino, strMsg);
+			int nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
+			msg_recebida[ nrec ] = '\0';
+			return strMsg;
+
 
 }
 
-
-/* MANDA VALOR, QUEBRADASSO, OCORRENCIA DE SEGFAULT
- * void mandaValor(char tipo[], float valor){
-
-	int porta_destino = 12345;
-	struct sockaddr_in endereco_destino = cria_endereco_destino("localhost", 12345);
-	int socket_local = cria_socket_local();
-	char strValor[20], strMsg[20];
-
-	printf("%f\n",valor);
-	sprintf(*strValor, "%f",valor);
-	strValor[5] = '\0';
-	printf(strValor);
-	strcat(tipo, strValor);
-	strcpy(strMsg, tipo);
-	printf(strMsg);
-	printf("  <-Mensagem enviada\n");
-	envia_mensagem(socket_local, endereco_destino, strMsg);
-
-}
-*/
 
 
 //--------------------------------------------------------------------------
@@ -225,7 +224,7 @@ int main(int argc, char *argv[])
 		iteract++;
 
 		/* do the stuff */
-
+		//MANDA VALOR----------------------
 		H = getValor("sh-0", socket_local, endereco_destino);
 			/*envia_mensagem(socket_local, endereco_destino, "sh-0");
 			nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
@@ -242,21 +241,22 @@ int main(int argc, char *argv[])
 			if (iteract == 100000){ fclose(dados); }
 			*/
 
-
+		//CALCULO DA AÇÃO DE CONTROLE
 		Uh = ke * KpH * (Href - H);
 		Ni = Ni*offset + Uh;
 		if (Ni < 0){ Ni = 0;}
 		if (Ni > 100){ Ni = 100;}
 		//Ni = Ni*offset + Uh;
 
-		//mandaValor
-		sprintf(strValor, "%f",Ni);
-		strValor[5] = '\0';
-		strcpy(strMsg, "ani");
-		strcat(strMsg, strValor);
-		envia_mensagem(socket_local, endereco_destino, strMsg);
-		nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
-		msg_recebida[ nrec ] = '\0';
+		//mandaValor----------------------
+		strMsg = mandaValor(Ni, "ani", socket_local, endereco_destino);
+		/*sprintf(strValor, "%f",Ni);
+			strValor[5] = '\0';
+			strcpy(strMsg, "ani");
+			strcat(strMsg, strValor);
+			envia_mensagem(socket_local, endereco_destino, strMsg);
+			nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
+			msg_recebida[ nrec ] = '\0';*/
 
 		/*Aquisição de tempo
 		//clock_gettime(CLOCK_MONOTONIC ,&tfin);
