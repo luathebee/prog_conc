@@ -121,7 +121,7 @@ float getValor(char msg[], int socket_local, struct sockaddr_in endereco_destino
 
 
 /* MANDA VALOR, QUEBRADASSO, OCORRENCIA DE SEGFAULT*/
-char mandaValor(char tipo[], float valor, int socket_local, struct sockaddr_in endereco_destino){
+int mandaValor(char tipo[], float valor, int socket_local, struct sockaddr_in endereco_destino){
 
 			int porta_destino = 12345;
 			char strValor[20], strMsg[20], msg_recebida[50];
@@ -134,7 +134,7 @@ char mandaValor(char tipo[], float valor, int socket_local, struct sockaddr_in e
 			envia_mensagem(socket_local, endereco_destino, strMsg);
 			int nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
 			msg_recebida[ nrec ] = '\0';
-			return strMsg;
+			return &strMsg;
 
 
 }
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 		//Ni = Ni*offset + Uh;
 
 		//mandaValor----------------------
-		strMsg = mandaValor(Ni, "ani", socket_local, endereco_destino);
+		*strMsg = mandaValor("ani", Ni, socket_local, endereco_destino);
 		/*sprintf(strValor, "%f",Ni);
 			strValor[5] = '\0';
 			strcpy(strMsg, "ani");
@@ -258,12 +258,12 @@ int main(int argc, char *argv[])
 			nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
 			msg_recebida[ nrec ] = '\0';*/
 
-		/*Aquisição de tempo
+		/*--Aquisição de tempo--
 		//clock_gettime(CLOCK_MONOTONIC ,&tfin);
 		//float varT = tfin.tv_nsec - t.tv_nsec;
 		//printf(" Tempo = %.0f\n",varT); */
 
-	 /*printer*/
+	 /*--printer--*/
 	 if (iteract%100 == 0){
 			 printf("Iteração: %d\n",iteract);
 		   printf("Controle = %f \n",Uh);
