@@ -225,20 +225,20 @@ int main(int argc, char *argv[])
 		/* do the stuff */
 		//MANDA VALOR----------------------
 		H = getValor("sh-0", socket_local, endereco_destino);
-			/*envia_mensagem(socket_local, endereco_destino, "sh-0");
-			nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
-			for(i = 0; i <= 4; i++){
-				msg_recebida[i] = msg_recebida[i+3];
-			}
-			msg_recebida[5] = '\0';
-			//printf(msg_recebida);
-			//printf("\n");
-			H = atof(msg_recebida);*/
-
-			/*ESCRITA DE DADOS EM ARQUIVO
-			fprintf(dados, " %f\n",H);
-			if (iteract == 100000){ fclose(dados); }
-			*/
+		/*envia_mensagem(socket_local, endereco_destino, "sh-0");
+		nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
+		for(i = 0; i <= 4; i++){
+			msg_recebida[i] = msg_recebida[i+3];
+		}
+		msg_recebida[5] = '\0';
+		//printf(msg_recebida);
+		//printf("\n");
+		H = atof(msg_recebida);*/
+		
+		/*ESCRITA DE DADOS EM ARQUIVO
+		printf(dados, " %f\n",H);
+		if (iteract == 100000){ fclose(dados); }
+		*/
 
 		//CALCULO DA AÇÃO DE CONTROLE
 		Uh = ke * KpH * (Href - H);
@@ -250,12 +250,12 @@ int main(int argc, char *argv[])
 		//mandaValor----------------------
 		/* strMsg = mandaValor("ani", Ni, socket_local, endereco_destino);*/
 		sprintf(strValor, "%f",Ni);
-			strValor[5] = '\0';
-			strcpy(strMsg, "ani");
-			strcat(strMsg, strValor);
-			envia_mensagem(socket_local, endereco_destino, strMsg);
-			nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
-			msg_recebida[ nrec ] = '\0';
+		strValor[5] = '\0';
+		strcpy(strMsg, "ani");
+		strcat(strMsg, strValor);
+		envia_mensagem(socket_local, endereco_destino, strMsg);
+		nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
+		msg_recebida[ nrec ] = '\0';
 
 		/*--Aquisição de tempo--
 		//clock_gettime(CLOCK_MONOTONIC ,&tfin);
