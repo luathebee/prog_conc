@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
 		//printf(msg_recebida);
 		//printf("\n");
 		H = atof(msg_recebida);*/
-		
+
 		/*ESCRITA DE DADOS EM ARQUIVO
 		printf(dados, " %f\n",H);
 		if (iteract == 100000){ fclose(dados); }

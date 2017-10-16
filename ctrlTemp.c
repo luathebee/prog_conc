@@ -6,10 +6,10 @@
  *  Estado Atual: Com controle de nível, com funcionamento periódico em CLOCK_MONOTONIC;
  *                com socket global, sem getvalor e mandaValor, sem leitura de intervalo de tempo;
  * 				  com gravação em arquivo;
-	
+
 	#---#----# TO DO #---#---#
 	{	junção de controle de tempo com temperatura;
-	{	criação de threads independetes para controles 	
+	{	criação de threads independetes para controles
 	{	protreção de variáveis
 	{	registro de log com buffer duplo
  *
@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <netdb.h>
 #include <time.h>
+#include <pthread.h>
 
 #define FALHA 1
 
@@ -32,12 +33,19 @@
 
 #define NSEC_PER_SEC    (1000000000) /* The number of nsecs per sec. */
 
+/*CONSTANTES DO PROGRAMA*/
 #define B 4
 #define P 1000
 #define S 4184
 #define R 000.1
-#define KpT 5
+#define KpT 15
 #define offset 0.8
+
+int socket_local;
+
+struct sockaddr_in endereco_destino;
+
+float Q, Qi, Qe, Ni, Na, eT, Uh, Ta, T, Tref;
 
 /*configs e funcoes de rede*/
 
@@ -144,60 +152,25 @@ float getValor(char msg[], int socket_local, struct sockaddr_in endereco_destino
 
 }*/
 
-
-
-//--------------------------------------------------------------------------
-//--------------------------------------MAIN--------------------------------
-//--------------------------------------------------------------------------
-
-int main(int argc, char *argv[])
-{
-	if (argc < 4) {
-		fprintf(stderr,"Uso: udpcliente endereço porta palavra \n");
-		fprintf(stderr,"onde o endereço é o endereço do servidor \n");
-		fprintf(stderr,"porta é o número da porta do servidor \n");
-		fprintf(stderr,"palavra é a palavra que será enviada ao servidor \n");
-		fprintf(stderr,"exemplo de uso:\n");
-		fprintf(stderr,"   udpcliente baker.das.ufsc.br 1234 \"ola\"\n");
-		exit(FALHA);
-	}
-
-
-	/*config de rede*/
-	int porta_destino = atoi( argv[2]);
-	//pega porta, converte pra inteiro, salva na variavel
-
-	int socket_local = cria_socket_local();
-
-	struct sockaddr_in endereco_destino = cria_endereco_destino(argv[1], porta_destino);
-
-	FILE *dados;
-	int temporizador, i = 0, iteract = 0;
+				/*---------------	CONTROLA  ------------------/
+				/----------------- TEMPERATURA ----------------*/
+void controlaTemperatura(){
+	int temporizador, i = 0, iteract = 0, nrec;
 	char msg_recebida[1000], strValor[20], strMsg[20];
-	int nrec;
-	float Q, Qi, Qe, Ni, Na, eT, Uh, Ta, T;
 
-	float Tref = atof (argv[3]);
-	printf("	Referencia de Temperatura = %.1f\n",Tref);
-
-
-
-
-	// MALHA DE CONTROLE de ALTURA
-	
 	//PEGA VALOR DA TEMPERATURA AMBIENTE
 	Ta = getValor("sta0", socket_local, endereco_destino);
+	printf("	Temperatura ambiente em  %.1f\n",Ta);
 
-
+	T = getValor("st-0", socket_local, endereco_destino);
 	printf("	Temperatura atual em  %.1f\n",T);
-	
-	
-	//DEFINE KE 
+
+
+	//DEFINE KE
 	//float ke = (B * P) / No;
-	
+
 	//dados = fopen("arquivodados.txt", "w");
 	//fprintf(dados, " 200 Medidas de altura H\n");
-
 
 	while(1){
 		//clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &t, NULL);
@@ -206,17 +179,15 @@ int main(int argc, char *argv[])
 
 		/* do the stuff */
 		//------------LE OS VALORES PARA AÇÃO DE CONTROLE----------------------
-		T = getValor("st-0", socket_local, endereco_destino);	
-		//Ni = getValor("sni0", socket_local, endereco_destino);
-		//Na = getValor("sna0", socket_local, endereco_destino);
-		Ta = getValor("sta0", socket_local, endereco_destino);	
+		T = getValor("st-0", socket_local, endereco_destino);
+		Ta = getValor("sta0", socket_local, endereco_destino);
 
 
 		//CALCULO DA AÇÃO DE CONTROLE
 		eT = Tref - T;
-		
+
 		Uh = 100 * KpT * eT;
-		Q = Q*offset + Uh;
+		Q = Q + Uh;
 
 
 		//saturador
@@ -243,7 +214,7 @@ int main(int argc, char *argv[])
 	 /*--printer--*/
 	 if (iteract%100 == 0){
 			 printf("Iteração: %d\n",iteract);
-		   printf("Controle = %f \n",Uh);
+		     printf("Controle = %f \n",Uh);
 			 printf("%s  <-Mensagem enviada\n", strMsg);
 			 printf("Mensagem de resposta com %d bytes >>>%s\n", nrec, msg_recebida);
 	 }
@@ -262,6 +233,43 @@ int main(int argc, char *argv[])
         //}
 
 	}
-	fclose(dados);
+
+}
+
+
+//--------------------------------------------------------------------------
+//--------------------------------------MAIN--------------------------------
+//--------------------------------------------------------------------------
+
+int main(int argc, char *argv[])
+{
+	if (argc < 4) {
+		fprintf(stderr,"Uso: udpcliente endereço porta palavra \n");
+		fprintf(stderr,"onde o endereço é o endereço do servidor \n");
+		fprintf(stderr,"porta é o número da porta do servidor \n");
+		fprintf(stderr,"palavra é a palavra que será enviada ao servidor \n");
+		fprintf(stderr,"exemplo de uso:\n");
+		fprintf(stderr,"   udpcliente baker.das.ufsc.br 1234 \"ola\"\n");
+		exit(FALHA);
+	}
+
+
+	/*config de rede*/
+	int porta_destino = atoi( argv[2]);
+	//pega porta, converte pra inteiro, salva na variavel
+
+	socket_local = cria_socket_local();
+
+	endereco_destino = cria_endereco_destino(argv[1], porta_destino);
+
+	FILE *dados;
+
+	pthread_t threadTemp;
+
+	Tref = atof (argv[3]);
+	printf("	Referencia de Temperatura = %.1f\n",Tref);
+
+	pthread_create(&threadTemp, NULL, (void *)controlaTemperatura, NULL);
+	pthread_join(threadTemp, NULL);
 
 }
