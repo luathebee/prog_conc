@@ -1,16 +1,14 @@
 /*  Programa de demonstração de uso de sockets UDP em C no Linux
  *  Funcionamento:
- * T1
- *  O programa cliente envia uma msg para o servidor. Essa msg é uma palavra.
+ * T2
+ *
  *  O servidor envia outra palavra como resposta.
- *  Estado Atual: Com controle de nível, com funcionamento periódico em CLOCK_MONOTONIC;
- *                com socket global, sem getvalor e mandaValor, sem leitura de intervalo de tempo;
- * 				  com gravação em arquivo;
-
+ *  Estado Atual: Com controle rudimentar de nível e temperatura
+ *
 	#---#----# TO DO #---#---#
-	{	junção de controle de tempo com temperatura;
-	{	criação de threads independetes para controles
-	{	protreção de variáveis
+	{
+	{	melhoria da lógica de controle
+	{	protreção de variáveis (quais???)
 	{	registro de log com buffer duplo
  *
  */
@@ -39,13 +37,18 @@
 #define S 4184
 #define R 000.1
 #define KpT 15
+#define KpH 0.5
 #define offset 0.8
 
-int socket_local;
+int socket_local, iteractT = 0, iteractH = 0;
 
 struct sockaddr_in endereco_destino;
 
-float Q, Qi, Qe, Ni, Na, eT, Uh, Ta, T, Tref;
+float Q, Qi, Qe, Ni, Na, eT, Ut, Ta, T, Tref, H, Uh, Href, No;
+
+char msg_recebidaT[1000],strMsgT[20], msg_recebidaH[1000], strMsgH[20];
+
+pthread_mutex_t controlLock;
 
 /*configs e funcoes de rede*/
 
@@ -152,19 +155,27 @@ float getValor(char msg[], int socket_local, struct sockaddr_in endereco_destino
 
 }*/
 
+void terminal(){
+
+
+}
+
+
 				/*---------------	CONTROLA  ------------------/
 				/----------------- TEMPERATURA ----------------*/
 void controlaTemperatura(){
-	int temporizador, i = 0, iteract = 0, nrec;
-	char msg_recebida[1000], strValor[20], strMsg[20];
+	int temporizador, i = 0, nrec;
+	char msg_recebidaT[1000], strValor[20], strMsgT[20];
 
 	//PEGA VALOR DA TEMPERATURA AMBIENTE
+
+	pthread_mutex_lock(&controlLock);
 	Ta = getValor("sta0", socket_local, endereco_destino);
 	printf("	Temperatura ambiente em  %.1f\n",Ta);
 
 	T = getValor("st-0", socket_local, endereco_destino);
 	printf("	Temperatura atual em  %.1f\n",T);
-
+	pthread_mutex_unlock(&controlLock);
 
 	//DEFINE KE
 	//float ke = (B * P) / No;
@@ -175,48 +186,48 @@ void controlaTemperatura(){
 	while(1){
 		//clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &t, NULL);
 
-		iteract++;
+		iteractT++;
 
 		/* do the stuff */
-		//------------LE OS VALORES PARA AÇÃO DE CONTROLE----------------------
-		T = getValor("st-0", socket_local, endereco_destino);
-		Ta = getValor("sta0", socket_local, endereco_destino);
+		pthread_mutex_unlock(&controlLock);
+			//LEITURA DE VALORES
+				T = getValor("st-0", socket_local, endereco_destino);
+				Ta = getValor("sta0", socket_local, endereco_destino);
 
+			//CALCULO DA AÇÃO DE CONTROLE
+				eT = Tref - T;
+				Ut = 100 * KpT * eT;
+				Q = Q + Ut;
 
-		//CALCULO DA AÇÃO DE CONTROLE
-		eT = Tref - T;
+			//saturador
+				if (Q < 0){ Q = 0;}
+				if (Q > 1000000){ Q = 1000000;}
 
-		Uh = 100 * KpT * eT;
-		Q = Q + Uh;
+			//Ni = Ni*offset + Ut;
 
+			//ENVIO DE VALORES
+			/*  strMsg = mandaValor("ani", Ni, socket_local, endereco_destino);*/
+				sprintf(strValor, "%f", Q);
+				strValor[8] = '\0';
+				strcpy(strMsgT, "aq-");
+				strcat(strMsgT, strValor);
+				envia_mensagem(socket_local, endereco_destino, strMsgT);
+				nrec = recebe_mensagem(socket_local, msg_recebidaT, 1000);
+				msg_recebidaT[ nrec ] = '\0';
 
-		//saturador
-		if (Q < 0){ Q = 0;}
-		if (Q > 1000000){ Q = 1000000;}
-
-		//Ni = Ni*offset + Uh;
-
-		//MANDA VALOR DA AÇÃO DE CONTROLE ----------------------
-		/* strMsg = mandaValor("ani", Ni, socket_local, endereco_destino);*/
-		sprintf(strValor, "%f", Q);
-		strValor[8] = '\0';
-		strcpy(strMsg, "aq-");
-		strcat(strMsg, strValor);
-		envia_mensagem(socket_local, endereco_destino, strMsg);
-		nrec = recebe_mensagem(socket_local, msg_recebida, 1000);
-		msg_recebida[ nrec ] = '\0';
-
+		pthread_mutex_unlock(&controlLock);
 		/*--Aquisição de tempo--
 		//clock_gettime(CLOCK_MONOTONIC ,&tfin);
 		//float varT = tfin.tv_nsec - t.tv_nsec;
 		//printf(" Tempo = %.0f\n",varT); */
 
 	 /*--printer--*/
-	 if (iteract%100 == 0){
-			 printf("Iteração: %d\n",iteract);
-		     printf("Controle = %f \n",Uh);
-			 printf("%s  <-Mensagem enviada\n", strMsg);
-			 printf("Mensagem de resposta com %d bytes >>>%s\n", nrec, msg_recebida);
+	 if (iteractT%100 == 0){
+		 	printf ("\n**********TEMPERATURA**********\n");
+			printf("Iteração: %d\n",iteractT);
+		    printf("Controle = %f \n",Ut);
+			printf("%s  <-Mensagem enviada\n", strMsgT);
+			printf("Mensagem de resposta com %d bytes >>>%s\n", nrec, msg_recebidaT);
 	 }
 		/*temporizador simples*/
 		temporizador = 0;
@@ -236,6 +247,62 @@ void controlaTemperatura(){
 
 }
 
+						/*---------------	CONTROLE  ------------------/
+/						-----------------    NIVEL    ----------------*/
+void controleNivel(){
+		int temporizador, i = 0, nrec;
+		char strValor[20];
+
+		pthread_mutex_lock(&controlLock);
+		No = getValor("sno0", socket_local, endereco_destino);
+		pthread_mutex_unlock(&controlLock);
+
+		printf("	Fluxo de saída de agua em %.1f\n",No);
+		//valor inicial de Ni = No;
+		Ni = No;
+		float ke = (B * P) / No;
+
+		/* do the stuff */
+		while(1){
+
+			iteractH++;
+
+			pthread_mutex_lock(&controlLock);
+			//LEITURA DE VALOR
+				H = getValor("sh-0", socket_local, endereco_destino);
+
+			//CALCULO DA AÇÃO DE CONTROLE
+				Uh = ke * KpH * (Href - H);
+				Ni = Ni*offset + Uh;
+				if (Ni < 0){ Ni = 0;}
+				if (Ni > 100){ Ni = 100;}
+				//Ni = Ni*offset + Uh;
+
+			//ENVIO DE VALOR
+			/* strMsg = mandaValor("ani", Ni, socket_local, endereco_destino);*/
+				sprintf(strValor, "%f",Ni);
+				strValor[5] = '\0';
+				strcpy(strMsgH, "ani");
+				strcat(strMsgH, strValor);
+				envia_mensagem(socket_local, endereco_destino, strMsgH);
+				nrec = recebe_mensagem(socket_local, msg_recebidaH, 1000);
+				msg_recebidaH[ nrec ] = '\0';
+
+			pthread_mutex_unlock(&controlLock);
+		 	/*--printer--*/
+		 	if (iteractH%200 == 0){
+				printf ("\n--------NÍVEL--------\n");
+				printf("Iteração: %d\n",iteractH);
+			   	printf("Controle = %f \n",Uh);
+				printf("%s  <-Mensagem enviada\n", strMsgH);
+				printf("Mensagem de resposta com %d bytes >>>%s\n", nrec, msg_recebidaH);
+		 	}
+			/*temporizador simples*/
+			int temporizador = 0;
+			while(temporizador<7000000){ temporizador++; }
+		}
+}
+
 
 //--------------------------------------------------------------------------
 //--------------------------------------MAIN--------------------------------
@@ -243,13 +310,14 @@ void controlaTemperatura(){
 
 int main(int argc, char *argv[])
 {
-	if (argc < 4) {
-		fprintf(stderr,"Uso: udpcliente endereço porta palavra \n");
+	if (argc != 5) {
+		fprintf(stderr,"Uso: ctrlTemp endereço porta Tref Href \n");
 		fprintf(stderr,"onde o endereço é o endereço do servidor \n");
 		fprintf(stderr,"porta é o número da porta do servidor \n");
-		fprintf(stderr,"palavra é a palavra que será enviada ao servidor \n");
+		fprintf(stderr,"Tref é a referencia de temperatura em ºC \n");
+		fprintf(stderr,"Href é a referencia de nivel em m \n");
 		fprintf(stderr,"exemplo de uso:\n");
-		fprintf(stderr,"   udpcliente baker.das.ufsc.br 1234 \"ola\"\n");
+		fprintf(stderr,"   udpcliente baker.das.ufsc.br 1234 30 2.5 \n");
 		exit(FALHA);
 	}
 
@@ -264,12 +332,16 @@ int main(int argc, char *argv[])
 
 	FILE *dados;
 
-	pthread_t threadTemp;
+	pthread_t threadTemp, threadNivel;
 
 	Tref = atof (argv[3]);
 	printf("	Referencia de Temperatura = %.1f\n",Tref);
 
+	Href = atof (argv[4]);
+	printf("	Referencia de Altura = %.1f\n",Href);
+
 	pthread_create(&threadTemp, NULL, (void *)controlaTemperatura, NULL);
+	pthread_create(&threadTemp, NULL, (void *)controleNivel, NULL);
 	pthread_join(threadTemp, NULL);
 
 }
